@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { LogoutButton } from './logout-button';
 
 const adminNavItems = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: '📊' },
@@ -47,7 +48,8 @@ export function AdminSidebar() {
           ))}
         </nav>
 
-        <div className="p-4 border-t">
+        <div className="p-4 border-t space-y-3">
+          <LogoutButton />
           <div className="text-xs text-muted-foreground">
             <Link href="/" className="hover:text-foreground">
               ← Volver al inicio
@@ -64,12 +66,10 @@ export function AdminHeader() {
     <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b lg:pl-64">
       <div className="flex items-center justify-between h-14 px-4">
         <div className="flex items-center gap-4">
-          {/* Mobile menu button */}
-          <Button variant="ghost" size="icon" className="lg:hidden">
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </Button>
+          <span className="text-sm text-muted-foreground">Panel de Administración</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <LogoutButton />
         </div>
       </div>
     </header>

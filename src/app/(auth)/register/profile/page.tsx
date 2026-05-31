@@ -48,6 +48,7 @@ export default function ProfileSetupPage() {
         return;
       }
 
+      // In production, would also create session here
       router.push('/dashboard');
     } catch {
       setError('Error de conexión');
@@ -58,7 +59,7 @@ export default function ProfileSetupPage() {
 
   return (
     <Card className="w-full max-w-lg">
-      <CardHeader>
+      <CardHeader className="text-center">
         <CardTitle>Completa tu Perfil</CardTitle>
         <CardDescription>
           Cuéntanos un poco más sobre ti para personalizar tu experiencia
@@ -115,7 +116,8 @@ export default function ProfileSetupPage() {
           <div className="border-t pt-4">
             <h3 className="font-medium mb-3">Información Médica</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Esta información es confidencial y solo será usada para adaptar las clases a tus necesidades.
+              Esta información es confidencial y solo será usada para adaptar las clases a tus
+              necesidades.
             </p>
 
             <div className="space-y-4">

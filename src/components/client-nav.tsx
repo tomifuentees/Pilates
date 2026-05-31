@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { LogoutButton } from './logout-button';
 
-const navItems = [
+const clientNavItems = [
   { href: '/dashboard', label: 'Inicio', icon: '🏠' },
   { href: '/book', label: 'Reservar', icon: '📅' },
   { href: '/my-classes', label: 'Mis Clases', icon: '📋' },
@@ -18,7 +19,7 @@ export function ClientNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t">
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
-        {navItems.map((item) => (
+        {clientNavItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
@@ -43,6 +44,7 @@ export function ClientHeader({ title }: { title: string }) {
     <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
       <div className="flex items-center justify-between h-14 px-4 max-w-lg mx-auto">
         <h1 className="font-semibold">{title}</h1>
+        <LogoutButton />
       </div>
     </header>
   );

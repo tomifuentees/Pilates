@@ -19,7 +19,10 @@ export async function GET(request: Request) {
     });
 
     if (!user) {
-      return NextResponse.json({ user: null });
+      // Clear invalid session cookie
+      const response = NextResponse.json({ user: null });
+      response.cookies.set('session', '', { maxAge: 0 });
+      return response;
     }
 
     return NextResponse.json({
@@ -30,6 +33,7 @@ export async function GET(request: Request) {
         clientName: user.client
           ? `${user.client.firstName} ${user.client.lastName}`
           : null,
+        clientId: user.client?.id || null,
       },
     });
   } catch (error) {

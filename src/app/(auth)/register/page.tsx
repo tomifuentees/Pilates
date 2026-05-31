@@ -42,7 +42,8 @@ export default function RegisterPage() {
         return;
       }
 
-      router.push('/register/profile?userId=' + result.userId);
+      // Redirect to complete profile
+      router.push(`/register/profile?userId=${result.userId}`);
     } catch {
       setError('Error de conexión');
     } finally {
@@ -51,8 +52,8 @@ export default function RegisterPage() {
   };
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
+    <Card className="w-full max-w-sm">
+      <CardHeader className="text-center">
         <CardTitle>Crear Cuenta</CardTitle>
         <CardDescription>
           Regístrate para comenzar a reservar tus clases
@@ -72,6 +73,7 @@ export default function RegisterPage() {
               <Input
                 id="firstName"
                 placeholder="María"
+                autoComplete="given-name"
                 {...register('firstName')}
               />
               {errors.firstName && (
@@ -84,6 +86,7 @@ export default function RegisterPage() {
               <Input
                 id="lastName"
                 placeholder="García"
+                autoComplete="family-name"
                 {...register('lastName')}
               />
               {errors.lastName && (
@@ -98,6 +101,7 @@ export default function RegisterPage() {
               id="email"
               type="email"
               placeholder="tu@email.com"
+              autoComplete="email"
               {...register('email')}
             />
             {errors.email && (
@@ -111,6 +115,7 @@ export default function RegisterPage() {
               id="phone"
               type="tel"
               placeholder="+34 600 000 000"
+              autoComplete="tel"
               {...register('phone')}
             />
             {errors.phone && (
@@ -124,6 +129,7 @@ export default function RegisterPage() {
               id="password"
               type="password"
               placeholder="••••••••"
+              autoComplete="new-password"
               {...register('password')}
             />
             {errors.password && (
@@ -137,6 +143,7 @@ export default function RegisterPage() {
               id="confirmPassword"
               type="password"
               placeholder="••••••••"
+              autoComplete="new-password"
               {...register('confirmPassword')}
             />
             {errors.confirmPassword && (

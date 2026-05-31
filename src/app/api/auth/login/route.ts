@@ -7,9 +7,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { email, password } = body;
 
-    // Find user
+    // Find user with client
     const user = await db.user.findUnique({
-      where: { email },
+      where: { email: email.toLowerCase() },
       include: { client: true },
     });
 
@@ -30,10 +30,15 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create simple session token (in production, use proper JWT or session)
-    const sessionToken = Buffer.from(
-      JSON.stringify({ userId: user.id, role: user.role, email: user.email })
-    ).toString('base64');
+    // Create session token
+    const sessionData = {
+      userId: user.id,
+      role: user.role,
+      email: user.email,
+      clientId: user.client?.id || null,
+    };
+
+    const sessionToken = Buffer.from(JSON.stringify(sessionData)).toString('base64');
 
     const response = NextResponse.json({
       user: {

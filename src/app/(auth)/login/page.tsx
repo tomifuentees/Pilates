@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { loginSchema, type LoginInput } from '@/lib/validators';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 
 export default function LoginPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -42,6 +44,9 @@ export default function LoginPage() {
         return;
       }
 
+      // Invalidate session query to refresh auth state
+      queryClient.invalidateQueries({ queryKey: ['session'] });
+
       // Redirect based on role
       if (result.user.role === 'ADMIN') {
         router.push('/admin/dashboard');
@@ -56,11 +61,11 @@ export default function LoginPage() {
   };
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
+    <Card className="w-full max-w-sm">
+      <CardHeader className="text-center">
         <CardTitle>Iniciar Sesión</CardTitle>
         <CardDescription>
-          Ingresa tus credenciales para acceder a tu cuenta
+          Accede a tu cuenta para reservar clases
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -77,6 +82,7 @@ export default function LoginPage() {
               id="email"
               type="email"
               placeholder="tu@email.com"
+              autoComplete="email"
               {...register('email')}
             />
             {errors.email && (
@@ -90,6 +96,7 @@ export default function LoginPage() {
               id="password"
               type="password"
               placeholder="••••••••"
+              autoComplete="current-password"
               {...register('password')}
             />
             {errors.password && (
@@ -103,7 +110,7 @@ export default function LoginPage() {
           </Button>
           <p className="text-sm text-muted-foreground text-center">
             ¿No tienes cuenta?{' '}
-            <Link href="/register" className="text-primary hover:underline">
+            <Link href="/register" className="text-primary hover:underline font-medium">
               Regístrate
             </Link>
           </p>
