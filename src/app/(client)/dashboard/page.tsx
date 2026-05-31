@@ -1,98 +1,172 @@
+'use client';
+
+import { useBookings, useMemberships } from '@/hooks';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
+import { format, isToday, isTomorrow, parseISO } from 'date-fns';
+import { es } from 'date-fns/locale';
+
+function formatClassDate(dateStr: string) {
+  const date = parseISO(dateStr);
+  if (isToday(date)) return 'Hoy';
+  if (isTomorrow(date)) return 'Mañana';
+  return format(date, "EEEE d 'de' MMMM", { locale: es });
+}
 
 export default function ClientDashboardPage() {
+  // Mock client ID - in production this would come from session
+  const clientId = 'mock-client-id';
+
+  const { data: bookingsData, isLoading: bookingsLoading } = useBookings(clientId, 'CONFIRMED');
+  const { data: membershipData, isLoading: membershipLoading } = useMemberships(clientId, 'ACTIVE');
+
+  const upcomingBookings = bookingsData?.bookings?.filter(
+    (b: { classInstance: { startTime: string } }) =>
+      parseISO(b.classInstance.startTime) > new Date()
+  ) || [];
+
+  const nextBooking = upcomingBookings[0];
+  const membership = membershipData?.memberships?.[0];
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 max-w-2xl mx-auto">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Mi Dashboard</h1>
-          <p className="text-muted-foreground">Bienvenida a tu espacio personal</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Mi Dashboard</h1>
+          <p className="text-sm text-muted-foreground">Bienvenida a tu espacio personal</p>
         </div>
         <Link href="/book">
-          <Button>Reservar Clase</Button>
+          <Button size="sm">Reservar Clase</Button>
         </Link>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4">
+        {/* Next Class Card */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Próxima Clase</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Próxima Clase
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">No hay clases reservadas</div>
-            <p className="text-xs text-muted-foreground">
-              Reserva tu primera clase para comenzar
-            </p>
+            {bookingsLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            ) : nextBooking ? (
+              <div className="space-y-1">
+                <div className="text-xl font-semibold">
+                  {nextBooking.classInstance.classType.name}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {formatClassDate(nextBooking.classInstance.startTime)}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {format(parseISO(nextBooking.classInstance.startTime), 'HH:mm')} ·{' '}
+                  {nextBooking.classInstance.instructor.firstName}{' '}
+                  {nextBooking.classInstance.instructor.lastName}
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="text-lg font-medium text-muted-foreground">
+                  No hay clases reservadas
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  <Link href="/book" className="text-primary hover:underline">
+                    Reserva tu primera clase
+                  </Link>{' '}
+                  para comenzar
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
+        {/* Membership Card */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Membresía</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Membresía
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">--</div>
-            <p className="text-xs text-muted-foreground">
-              Sin membresía activa
-            </p>
+            {membershipLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-1/2" />
+                <Skeleton className="h-4 w-3/4" />
+              </div>
+            ) : membership ? (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-medium">
+                    {membership.type === 'UNLIMITED'
+                      ? 'Ilimitada'
+                      : membership.type === 'RESTRICTED'
+                      ? `${membership.classesAllowed} clases/mes`
+                      : `${membership.classesRemaining} clases restantes`}
+                  </span>
+                  <Badge
+                    variant={membership.status === 'ACTIVE' ? 'success' : 'secondary'}
+                    className="text-xs"
+                  >
+                    {membership.status === 'ACTIVE' ? 'Activa' : membership.status}
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Vence: {format(parseISO(membership.endDate), 'd MMM yyyy', { locale: es })}
+                </p>
+              </div>
+            ) : (
+              <div>
+                <div className="text-lg font-medium text-muted-foreground">
+                  Sin membresía activa
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  <Link href="/admin/memberships" className="text-primary hover:underline">
+                    Adquiere una membresía
+                  </Link>{' '}
+                  para reservar clases
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Clases Este Mes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">
-              0 horas de práctica
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
+        {/* Quick Actions */}
         <Card>
           <CardHeader>
-            <CardTitle>Accesos Rápidos</CardTitle>
-            <CardDescription>Lo que puedes hacer ahora</CardDescription>
+            <CardTitle className="text-base">Accesos Rápidos</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-2">
-            <Link href="/book" className="w-full">
-              <Button variant="outline" className="w-full justify-start">
-                📅 Reservar una clase
+          <CardContent className="grid grid-cols-2 gap-2">
+            <Link href="/book">
+              <Button variant="outline" className="w-full h-20 flex flex-col gap-1">
+                <span className="text-lg">📅</span>
+                <span className="text-xs">Reservar</span>
               </Button>
             </Link>
-            <Link href="/my-classes" className="w-full">
-              <Button variant="outline" className="w-full justify-start">
-                📋 Ver mis clases
+            <Link href="/my-classes">
+              <Button variant="outline" className="w-full h-20 flex flex-col gap-1">
+                <span className="text-lg">📋</span>
+                <span className="text-xs">Mis Clases</span>
               </Button>
             </Link>
-            <Link href="/membership" className="w-full">
-              <Button variant="outline" className="w-full justify-start">
-                💳 Ver mi membresía
+            <Link href="/membership">
+              <Button variant="outline" className="w-full h-20 flex flex-col gap-1">
+                <span className="text-lg">💳</span>
+                <span className="text-xs">Membresía</span>
               </Button>
             </Link>
-            <Link href="/profile" className="w-full">
-              <Button variant="outline" className="w-full justify-start">
-                👤 Mi perfil
+            <Link href="/profile">
+              <Button variant="outline" className="w-full h-20 flex flex-col gap-1">
+                <span className="text-lg">👤</span>
+                <span className="text-xs">Perfil</span>
               </Button>
             </Link>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Horarios de Hoy</CardTitle>
-            <CardDescription>Clases disponibles hoy</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground text-center py-8">
-              No hay clases programadas para hoy
-            </p>
           </CardContent>
         </Card>
       </div>
