@@ -1,0 +1,250 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CLIENT
+  INSTRUCTOR
+  ADMIN
+}
+
+enum ClassType {
+  REFORMER
+  MAT
+  TOWER
+  CHAIR
+  BARREL
+  PRIVATE
+}
+
+enum MembershipType {
+  UNLIMITED
+  RESTRICTED
+  PACKAGE
+}
+
+enum MembershipStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum BookingStatus {
+  CONFIRMED
+  WAITLISTED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum PaymentMethod {
+  CASH
+  TRANSFER
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  EXPIRED
+  REFUNDED
+}
+
+enum NotificationType {
+  BOOKING_CONFIRMATION
+  CLASS_REMINDER_24H
+  CLASS_REMINDER_2H
+  WAITLIST_AVAILABLE
+  MEMBERSHIP_EXPIRING
+  MEMBERSHIP_EXPIRED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(CLIENT)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  client      Client?
+  instructor  Instructor?
+}
+
+model Client {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  firstName  String
+  lastName   String
+  phone      String
+  dateOfBirth DateTime?
+  avatarUrl  String?
+
+  // Medical info
+  injuries           String?
+  medicalNotes       String?
+  physicalLimitations String?
+
+  // Emergency contact
+  emergencyContactName    String?
+  emergencyContactPhone   String?
+  emergencyContactRelation String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  membership Membership?
+  bookings    Booking[]
+  payments    Payment[]
+  waitlist    Waitlist[]
+  notifications Notification[]
+}
+
+model Instructor {
+  id       String @id @default(cuid())
+  userId   String @unique
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  firstName String
+  lastName  String
+  phone     String?
+  bio       String?
+  specialties ClassType[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  classInstances ClassInstance[]
+}
+
+model ClassType_ {
+  id           String    @id @default(cuid())
+  name         ClassType @unique
+
+  description  String?
+  durationMins Int      @default(50)
+  color        String   // for calendar UI (hex)
+
+  classInstances ClassInstance[]
+}
+
+model ClassInstance {
+  id         String   @id @default(cuid())
+  classTypeId String
+  classType  ClassType_ @relation(fields: [classTypeId], references: [id])
+
+  instructorId String
+  instructor  Instructor @relation(fields: [instructorId], references: [id])
+
+  startTime  DateTime
+  endTime    DateTime
+  capacity   Int      @default(12)
+
+  bookings   Booking[]
+  waitlist   Waitlist[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Membership {
+  id        String          @id @default(cuid())
+  clientId  String          @unique
+  client    Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  type      MembershipType
+  status    MembershipStatus @default(ACTIVE)
+
+  startDate DateTime
+  endDate   DateTime
+
+  // For RESTRICTED type: number of classes allowed per month
+  classesAllowed   Int?
+
+  // For PACKAGE type: remaining classes
+  classesRemaining Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payments Payment[]
+}
+
+model Booking {
+  id              String        @id @default(cuid())
+  clientId        String
+  client          Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  classInstanceId String
+  classInstance   ClassInstance @relation(fields: [classInstanceId], references: [id], onDelete: Cascade)
+
+  status     BookingStatus @default(CONFIRMED)
+  checkedInAt DateTime?
+  bookedAt   DateTime      @default(now())
+  cancelledAt DateTime?
+
+  membershipId String?
+  membership   Membership? @relation(fields: [membershipId], references: [id])
+  paymentId    String?
+  payment      Payment?    @relation(fields: [paymentId], references: [id])
+
+  @@unique([clientId, classInstanceId])
+}
+
+model Waitlist {
+  id              String        @id @default(cuid())
+  clientId        String
+  client          Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  classInstanceId String
+  classInstance   ClassInstance @relation(fields: [classInstanceId], references: [id], onDelete: Cascade)
+
+  position   Int
+  joinedAt   DateTime  @default(now())
+  notifiedAt DateTime?
+  expiresAt  DateTime?
+
+  @@unique([clientId, classInstanceId])
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  clientId  String
+  client    Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  amount    Decimal       @db.Decimal(10, 2)
+  method    PaymentMethod
+
+  membershipId String?
+  membership   Membership? @relation(fields: [membershipId], references: [id])
+
+  status   PaymentStatus @default(PENDING)
+  paidAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  clientId  String
+  client    Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  type      NotificationType
+  channel   String          @default("email")
+
+  subject   String?
+  body      String?
+
+  scheduledFor DateTime
+  sentAt       DateTime?
+
+  bookingId      String?
+  classInstanceId String?
+
+  @@index([clientId, scheduledFor])
+}
